@@ -22,3 +22,23 @@ describe('GET /notes (Ejercicio 2)', () => {
     expect(res.body).toHaveLength(2);
   });
 });
+
+describe('GET /notes/:id (Ejercicio 3)', () => {
+  let app: ReturnType<typeof makeApp>;
+  beforeEach(() => { app = makeApp(':memory:'); });
+
+  it('200 y la nota si existe', async () => {
+    const created = await request(app).post('/notes').send({ title: 'A', content: 'a' });
+
+    const res = await request(app).get(`/notes/${created.body.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(created.body);
+  });
+
+  it('404 si el id no existe', async () => {
+    const res = await request(app).get('/notes/999');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'NotFound' });
+  });
+});

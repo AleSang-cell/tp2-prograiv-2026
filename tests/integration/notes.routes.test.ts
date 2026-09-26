@@ -119,3 +119,35 @@ describe('PATCH /notes/:id (Ejercicio 4)', () => {
     expect(res.body.error).toBe('NotFound');
   });
 });
+
+describe('DELETE /notes/:id (Ejercicio 5)', () => {
+  let app: ReturnType<typeof makeApp>;
+  let id: number;
+
+  beforeEach(async () => {
+    app = makeApp(':memory:');
+    const res = await request(app).post('/notes').send({ title: 'Comprar pan', content: 'Antes de las 20hs' });
+    id = res.body.id;
+  });
+
+  it('204 y cuerpo vacío si la nota existe', async () => {
+    const res = await request(app).delete(`/notes/${id}`);
+
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+  });
+
+  it('la nota eliminada ya no se puede obtener: GET devuelve 404', async () => {
+    await request(app).delete(`/notes/${id}`);
+
+    const res = await request(app).get(`/notes/${id}`);
+    expect(res.status).toBe(404);
+  });
+
+  it('404 si el id no existe', async () => {
+    const res = await request(app).delete('/notes/9999');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'NotFound' });
+  });
+});

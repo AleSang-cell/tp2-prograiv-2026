@@ -38,9 +38,16 @@ export class NoteServiceImpl implements NoteService {
   }
 
   updateNote(id: number, patch: NotePatch): Note | undefined {
-    // 🔴🟢 EJERCICIO 4: ciclo completo. Es una actualización PARCIAL:
-    // si patch solo trae `title`, `content` no debe cambiar (y viceversa).
-    throw new Error('updateNote: no implementado (Ejercicio 4)');
+     // EJERCICIO 4: actualizacion PARCIAL. Solo se aplican los campos que
+     // vienen definidos en el patch; los que faltan (o vienen como
+     // undefined) conservan su valor actual. Si el id no existe, el
+     // repositorio devuelve undefined.
+    const cambios: NotePatch = {};
+    if (patch.title !== undefined) cambios.title = patch.title;
+    if (patch.content !== undefined) cambios.content = patch.content;
+    if (patch.pinned !== undefined) cambios.pinned = patch.pinned;
+
+    return this.repo.update(id, cambios);
   }
 
   deleteNote(id: number): boolean {

@@ -2,6 +2,81 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { makeApp } from '../../src/app';
 
+describe('POST /notes (Ejercicio 1)', () => {
+  let app: ReturnType<typeof makeApp>;
+  beforeEach(() => { app = makeApp(':memory:'); });
+
+  it('201: crea la nota y la devuelve con id, timestamps y pinned en false por defecto', async () => {
+    const res = await request(app)
+      .post('/notes')
+      .send({ title: 'Comprar pan', content: 'Antes de las 20hs' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      title: 'Comprar pan',
+      content: 'Antes de las 20hs',
+      pinned: false
+    });
+    expect(res.body.id).toBeDefined();
+    expect(res.body.createdAt).toBeDefined();
+    expect(res.body.updatedAt).toBeDefined();
+  });
+
+  it('201: permite crear una nota ya fijada con pinned: true', async () => {
+    const res = await request(app)
+      .post('/notes')
+      .send({ title: 'A', content: 'B', pinned: true });
+
+    expect(res.status).toBe(201);
+    expect(res.body.pinned).toBe(true);
+  });
+
+  it('la nota creada queda persistida: GET /notes/:id la devuelve', async () => {
+    const created = await request(app).post('/notes').send({ title: 'A', content: 'B' });
+
+    const res = await request(app).get(`/notes/${created.body.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(created.body);
+  });
+
+  it('400: sin title no pasa la validacion de Zod', async () => {
+    const res = await request(app).post('/notes').send({ content: 'Sin titulo' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ValidationError');
+  });
+
+  it('400: sin content no pasa la validacion de Zod', async () => {
+    const res = await request(app).post('/notes').send({ title: 'Sin contenido' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ValidationError');
+  });
+
+  it('400: title vacio no pasa la validacion de Zod', async () => {
+    const res = await request(app).post('/notes').send({ title: '', content: 'a' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ValidationError');
+  });
+
+  it('400: pinned con tipo incorrecto no pasa la validacion de Zod', async () => {
+    const res = await request(app).post('/notes').send({ title: 'A', content: 'B', pinned: 'si' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('ValidationError');
+  });
+
+  it('400: una request invalida no crea la nota', async () => {
+    await request(app).post('/notes').send({ content: 'Sin titulo' });
+
+    const res = await request(app).get('/notes');
+    expect(res.body).toEqual([]);
+  });
+});
+
+
 describe('GET /notes (Ejercicio 2)', () => {
   let app: ReturnType<typeof makeApp>;
   beforeEach(() => { app = makeApp(':memory:'); });
